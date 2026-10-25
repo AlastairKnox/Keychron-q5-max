@@ -2,7 +2,7 @@
 
 Personal firmware for the **Keychron Q5 Max ANSI with knob**, retaining standard Mac/Windows layouts and adding Custom Linux mode for Ubuntu.
 
-Current firmware: **[v1.0.1](releases/v1.0.1/)** (26 October 2026). The full source recovery baseline remains v1.0.0; the build script overlays the current tracked source on it.
+Current firmware: **[v1.0.2](releases/v1.0.2/)** (26 October 2026). The full source recovery baseline remains v1.0.0; the build script overlays the current tracked source on it.
 
 ## Current controls
 
@@ -112,3 +112,6 @@ Enter the sudo password before disconnecting USB. Use Cable mode and a data-capa
 5. Keep a second copy of the recovery kit with the Hugo website backup.
 
 See [third-party notices](THIRD-PARTY-NOTICES.md) for licensing. No credentials, build environment or website content are required in this repository.
+
+- **Fn or left butterfly + L/P/H:** run `ls -ltr`, `ps auxw|more`, or `history` with Enter.
+- **Fn or left butterfly + keypad 0:** launch calculator. Recorded macro replay is **Fn+O**.

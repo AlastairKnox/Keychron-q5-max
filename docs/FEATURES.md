@@ -26,6 +26,9 @@ Standard mode preserves the manufacturer’s keys and knob behaviour. Its only a
 | Fn+C | Caps Word: uppercase a word/identifier, then stop at a space |
 | Fn+D | Type `../` once; repeat presses add more |
 | Fn+L or left butterfly+L | Type `ls -ltr` and press Enter |
+| Fn+P or left butterfly+P | Type `ps auxw\|more` and press Enter |
+| Fn+H or left butterfly+H | Type `history` and press Enter |
+| Fn+keypad 0 or left butterfly+keypad 0 | Open calculator |
 | Fn+M | Type `Thanks,` then `Alastair.` on the next line, followed by a newline |
 | Knob clockwise / anticlockwise | Volume up / down |
 | Press knob | Mute/unmute |
@@ -72,7 +75,7 @@ Media response depends on Ubuntu and the active player. These shortcuts still ne
 1. Press **Fn+R**, then release both keys. Recording starts when R is released.
 2. Perform the typing/editing sequence to record. It is also performed immediately.
 3. Press **Fn+S** to stop.
-4. Press **Fn+P**, then release, to replay in the currently focused application.
+4. Press **Fn+O**, then release, to replay in the currently focused application.
 
 Escape glows red while recording. There is one exposed recording slot, with up to about 128 ordinary press/release pairs; modifiers and Fn combinations consume extra events. A new recording replaces the old one. Recordings disappear on restart. Nested playback is disabled. Exiting Linux mode stops an active recording. Avoid changing autocorrect settings between recording and playback if you want the same text transformations.
 

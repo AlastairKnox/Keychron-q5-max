@@ -4,6 +4,13 @@ here=Path(__file__).resolve().parent
 qmk_root=Path(sys.argv[1]).resolve() if len(sys.argv)>1 else here.parent/'qmk-keychron'
 keymap=qmk_root/'keyboards/keychron/q5_max/ansi_encoder/keymaps/alastair/keymap.c'
 source=keymap.read_text()+(keymap.parent/'select_word.c').read_text()
+# Check actual layout positions against the board's matrix definition.
+import json
+maps={name:[k.strip() for k in body.split(',')] for name,body in re.findall(r'\[(\w+)\] = LAYOUT_ansi_101\((.*?)\),\n',keymap.read_text(),re.S)}
+positions=json.loads((qmk_root/'keyboards/keychron/q5_max/ansi_encoder/keyboard.json').read_text())['layouts']['LAYOUT_ansi_101']['layout']
+fn={tuple(p['matrix']):k for p,k in zip(positions,maps['LINUX_FN'])}
+assert fn[2,10]=='PROCESS_LIST' and fn[3,7]=='SHELL_HISTORY' and fn[5,16]=='LNX_CALC' and fn[2,9]=='DM_PLY1'
+assert maps['LINUX_BASE'][next(i for i,p in enumerate(positions) if p['matrix']==[5,16])]=='KC_P0'
 keys=set(re.findall(r'\b(?:KC_[A-Z0-9_]+|UG_[A-Z0-9_]+|MS_[A-Z0-9_]+|BT_HST[123]|P2P4G|BAT_LVL|SC_LSPO|SC_RSPC|CW_TOGG|DM_REC1|DM_RSTP|DM_PLY1)\b',source))
 mods=['KC_LCTL','KC_LSFT','KC_LALT','KC_LGUI','KC_RCTL','KC_RSFT','KC_RALT','KC_RGUI']
 keys-=set(mods+['KC_LEFT_SHIFT','KC_TRNS'])
@@ -54,8 +61,9 @@ static int autocorrect_resets,default_handler_calls,caps_resets,taps;
 static uint16_t last_tap;
 static char literal[256];
 static uint16_t stored_square, stored_fn_l=KC_TRNS;
-static uint16_t dynamic_keymap_get_keycode(uint8_t l,uint8_t r,uint8_t c){if(l==5&&r==3&&c==9)return stored_fn_l;assert(l==4&&r==0&&c==17);return stored_square;}
-static void dynamic_keymap_set_keycode(uint8_t l,uint8_t r,uint8_t c,uint16_t k){if(l==5&&r==3&&c==9){stored_fn_l=k;return;}assert(l==4&&r==0&&c==17);stored_square=k;}
+static uint16_t stored_extra[6][19];
+static uint16_t dynamic_keymap_get_keycode(uint8_t l,uint8_t r,uint8_t c){if(l==5&&r==3&&c==9)return stored_fn_l;if(l==4&&r==0&&c==17)return stored_square;return stored_extra[r][c];}
+static void dynamic_keymap_set_keycode(uint8_t l,uint8_t r,uint8_t c,uint16_t k){if(l==5&&r==3&&c==9){stored_fn_l=k;return;}if(l==4&&r==0&&c==17){stored_square=k;return;}stored_extra[r][c]=k;}
 static uint8_t get_mods(void){return held_mods;}
 static uint8_t get_weak_mods(void){return weak_mods;}
 static uint8_t get_oneshot_mods(void){return oneshot;}
@@ -117,8 +125,11 @@ test='''
 #include <stdio.h>
 int main(void){
  keyrecord_t press={.event={.pressed=true}},release={.event={.pressed=false}};
+ stored_extra[2][10]=DM_PLY1;stored_extra[2][9]=stored_extra[3][7]=stored_extra[5][16]=KC_TRNS;
  stored_square=LNX_OVERVIEW;
  keyboard_post_init_user(); assert(keymap_config.autocorrect_enable&&stored_square==LNX_PASTE&&stored_fn_l==LIST_LONG);
+ assert(stored_extra[2][10]==PROCESS_LIST&&stored_extra[2][9]==DM_PLY1&&stored_extra[3][7]==SHELL_HISTORY&&stored_extra[5][16]==LNX_CALC);
+ stored_extra[2][10]=KC_F15;keyboard_post_init_user();assert(stored_extra[2][10]==KC_F15);
  stored_square=KC_F15;keyboard_post_init_user();assert(stored_square==KC_F15);
  uint16_t k=KC_A; uint8_t buf=9,m=0;
  assert(!process_autocorrect_user(&k,&press,&buf,&m)&&buf==0);
@@ -157,6 +168,21 @@ int main(void){
  process_record_user(KC_L,&press);assert(!strcmp(literal,"ls -ltr\\n")&&!butterfly_forwarded);
  literal[0]=0;process_record_user(KC_L,&release);assert(!literal[0]);
  int listing_taps=taps;process_record_user(KC_LALT,&release);assert(taps==listing_taps);
+ // Commands work through either trigger, only on press, without leaking Alt.
+ uint16_t actions[]={PROCESS_LIST,SHELL_HISTORY,LNX_CALC};
+ uint16_t partners[]={KC_P,KC_H,KC_P0};
+ const char *commands[]={"ps auxw|more\\n","history\\n"};
+ for(int i=0;i<3;i++){
+  literal[0]=0;int before=taps;
+  assert(!process_record_user(actions[i],&press));
+  if(i<2)assert(!strcmp(literal,commands[i]));else assert(last_tap==KC_CALC&&taps==before+1);
+  literal[0]=0;before=taps;assert(!process_record_user(actions[i],&release));assert(!literal[0]&&taps==before);
+  process_record_user(KC_LALT,&press);literal[0]=0;before=taps;
+  assert(!process_record_user(partners[i],&press));assert(!butterfly_forwarded&&!get_mods());
+  if(i<2)assert(!strcmp(literal,commands[i]));else assert(last_tap==KC_CALC&&taps==before+1);
+  literal[0]=0;before=taps;process_record_user(partners[i],&release);process_record_user(KC_LALT,&release);
+  assert(!literal[0]&&taps==before);
+ }
  // Left butterfly: clipboard chords consume Alt, ordinary shortcuts forward it.
  held_mods=weak_mods=oneshot=0;
  process_record_user(KC_LALT,&press);assert(butterfly_held&&!get_mods());

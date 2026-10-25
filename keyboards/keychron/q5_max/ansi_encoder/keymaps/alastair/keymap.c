@@ -24,7 +24,7 @@
 enum layers { MAC_BASE, MAC_FN, WIN_BASE, WIN_FN, LINUX_BASE, LINUX_FN };
 enum custom_keycodes {
     LINUX_MODE = SAFE_RANGE, AC_SWITCH, UPDIR, WIN_SIG, SEL_WORD,
-    LNX_TERM, LNX_COPY, LNX_OVERVIEW, LNX_APPS, LNX_PASTE, LIST_LONG,
+    LNX_TERM, LNX_COPY, LNX_OVERVIEW, LNX_APPS, LNX_PASTE, LIST_LONG, PROCESS_LIST, SHELL_HISTORY, LNX_CALC,
 };
 #define FN_MAC MO(MAC_FN)
 #define FN_WIN MO(WIN_FN)
@@ -75,10 +75,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [LINUX_FN] = LAYOUT_ansi_101(
         _______, KC_BRID, KC_BRIU, LNX_OVERVIEW, LNX_APPS, UG_VALD, UG_VALU, KC_MPRV, KC_MPLY, KC_MNXT, KC_MUTE, KC_VOLD, KC_VOLU, _______, SEL_WORD, _______, _______, UG_TOGG,
         _______, BT_HST1, BT_HST2, BT_HST3, P2P4G, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_HOME, _______, _______, _______, _______,
-        UG_TOGG, UG_NEXT, UG_VALU, UG_HUEU, DM_REC1, UG_SPDU, _______, _______, _______, _______, DM_PLY1, _______, _______, _______, KC_END, UG_PREV, UG_NEXT, UG_SPDU,
-        _______, AC_SWITCH, DM_RSTP, UPDIR, UG_SATD, UG_SPDD, _______, _______, _______, LIST_LONG, _______, _______, _______, KC_END, UG_VALD, UG_VALU, UG_SPDD, _______,
+        UG_TOGG, UG_NEXT, UG_VALU, UG_HUEU, DM_REC1, UG_SPDU, _______, _______, _______, DM_PLY1, PROCESS_LIST, _______, _______, _______, KC_END, UG_PREV, UG_NEXT, UG_SPDU,
+        _______, AC_SWITCH, DM_RSTP, UPDIR, UG_SATD, UG_SPDD, _______, SHELL_HISTORY, _______, LIST_LONG, _______, _______, _______, KC_END, UG_VALD, UG_VALU, UG_SPDD, _______,
         _______, _______, _______, CW_TOGG, _______, BAT_LVL, _______, WIN_SIG, _______, _______, _______, _______, _______, UG_HUED, UG_HUEU, UG_SATU,
-        _______, _______, _______, LINUX_MODE, _______, _______, _______, _______, _______, _______, _______, UG_SATD, _______),
+        _______, _______, _______, LINUX_MODE, _______, _______, _______, _______, _______, _______, LNX_CALC, UG_SATD, _______),
 
 };
 // clang-format on
@@ -160,6 +160,15 @@ void keyboard_post_init_user(void) {
     if (dynamic_keymap_get_keycode(LINUX_FN, 3, 9) == KC_TRNS) {
         dynamic_keymap_set_keycode(LINUX_FN, 3, 9, LIST_LONG);
     }
+    // Migrate only the old defaults; preserve deliberate VIA remaps.
+    if (dynamic_keymap_get_keycode(LINUX_FN, 2, 10) == DM_PLY1)
+        dynamic_keymap_set_keycode(LINUX_FN, 2, 10, PROCESS_LIST);
+    if (dynamic_keymap_get_keycode(LINUX_FN, 2, 9) == KC_TRNS)
+        dynamic_keymap_set_keycode(LINUX_FN, 2, 9, DM_PLY1);
+    if (dynamic_keymap_get_keycode(LINUX_FN, 3, 7) == KC_TRNS)
+        dynamic_keymap_set_keycode(LINUX_FN, 3, 7, SHELL_HISTORY);
+    if (dynamic_keymap_get_keycode(LINUX_FN, 5, 16) == KC_TRNS)
+        dynamic_keymap_set_keycode(LINUX_FN, 5, 16, LNX_CALC);
     // Upgrade only our previous square binding if VIA retained the earlier map.
     // Leave other remaps and the function-row overview shortcut untouched.
     if (dynamic_keymap_get_keycode(LINUX_BASE, 0, 17) == LNX_OVERVIEW) {
@@ -237,17 +246,20 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
     if (record->event.pressed && butterfly_held) {
         butterfly_used = true;
-        if (keycode != LNX_COPY && keycode != LNX_PASTE && keycode != KC_L && !butterfly_forwarded) {
+        if (keycode != LNX_COPY && keycode != LNX_PASTE && keycode != KC_L && keycode != KC_P && keycode != KC_H && keycode != KC_P0 && !butterfly_forwarded) {
             register_code(KC_LALT);
             butterfly_forwarded = true;
         }
     }
-    if (keycode == KC_L && butterfly_held) {
-        if (record->event.pressed) {
-            process_autocorrect(KC_ESC, record);
-            literal_text("ls -ltr\n");
+    if (butterfly_held) {
+        uint16_t action = keycode == KC_L ? LIST_LONG :
+                          keycode == KC_P ? PROCESS_LIST :
+                          keycode == KC_H ? SHELL_HISTORY :
+                          keycode == KC_P0 ? LNX_CALC : 0;
+        if (action) {
+            keycode = action;
+            if (record->event.pressed) process_autocorrect(KC_ESC, record);
         }
-        return false;
     }
     if (!process_select_word(keycode, record, SEL_WORD)) return false;
     switch (keycode) {
@@ -259,6 +271,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             return false;
         case LIST_LONG:
             if (record->event.pressed) literal_text("ls -ltr\n");
+            return false;
+        case PROCESS_LIST:
+            if (record->event.pressed) literal_text("ps auxw|more\n");
+            return false;
+        case SHELL_HISTORY:
+            if (record->event.pressed) literal_text("history\n");
+            return false;
+        case LNX_CALC:
+            if (record->event.pressed) tap_code16(KC_CALC);
             return false;
         case WIN_SIG:
             if (record->event.pressed) literal_text("Thanks,\nAlastair.\n");

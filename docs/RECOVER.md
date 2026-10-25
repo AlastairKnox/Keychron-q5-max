@@ -65,7 +65,7 @@ The left butterfly is the third bottom-row key immediately before Space. Its Lin
 
 ### Add or change a text macro
 
-Find LIST_LONG and WIN_SIG in keymap.c for examples. LIST_LONG types `ls -ltr\n`, where the newline sends Enter. It is mapped on Fn+L and intercepted on left-butterfly+L. literal_text() clears and restores modifiers so text macros are literal even when triggered with a modifier held.
+Find LIST_LONG and WIN_SIG in keymap.c for examples. LIST_LONG types `ls -ltr\n`, where the newline sends Enter. It is mapped on Fn+L and intercepted on left-butterfly+L. PROCESS_LIST and SHELL_HISTORY similarly send `ps auxw|more\n` and `history\n` on Fn or left butterfly with P/H. LNX_CALC sends KC_CALC on Fn or left butterfly with keypad 0. Dynamic macro replay is Fn+O. Saved default Fn mappings migrate on boot; deliberate VIA remaps are preserved. literal_text() clears and restores modifiers so text macros are literal even when triggered with a modifier held.
 
 Append new custom keycodes to the enum; do not reorder existing ones. VIA may retain numeric keycodes in saved mappings between flashes. A changed default keymap alone may not change a saved mapping. keyboard_post_init_user() contains targeted migrations for the previous square binding and the formerly transparent Fn+L binding. Add similarly narrow migrations when necessary; preserve independently remapped keys.
 
