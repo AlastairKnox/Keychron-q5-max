@@ -1,0 +1,12 @@
+.venv/
+build/
+artifacts/
+__pycache__/
+*.pyc
+verification/mock.h
+verification/quantum.h
+verification/keychron_common.h
+verification/dynamic_keymap.h
+verification/dynamic_macro_core.c
+verification/test.c
+verification/test

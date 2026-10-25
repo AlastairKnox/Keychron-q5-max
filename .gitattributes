@@ -1,0 +1,5 @@
+# Preserve the historical regression fixture byte for byte.
+verification/original_autocorrect_data.h -whitespace
+*.tar.gz binary
+*.bin binary
+*.pdf binary
