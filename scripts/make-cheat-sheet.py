@@ -21,39 +21,41 @@ text(20,H-54,'Fn + Space  enters / leaves Linux mode',15,True)
 text(20,H-72,'Standard Mac / Windows layouts remain on the rear switch.',10.2,color=muted)
 c.setStrokeColor(rule);c.line(20,H-85,W-20,H-85)
 xs=[20,213,406];cw=169
-for x,title in zip(xs,['TYPE & EDIT','COPY & PASTE','KNOB & COMMANDS']):text(x,H-106,title,12,True,accent)
+for x,title in zip(xs,['TYPING MACROS','EDIT & KNOB','CLIPBOARD & APPS']):text(x,H-106,title,12,True,accent)
 cols=[[
+ ('Fn + L / Butterfly + L','ls -ltr + Enter'),
+ ('Fn + P / Butterfly + P','ps auxw|more + Enter'),
+ ('Fn + H / Butterfly + H','history + Enter'),
+ ('Fn + D','Type ../'),
+ ('Fn + M','Thanks, [new line] Alastair.'),
+ ('Fn + R, then release','Start recording a macro'),
+ ('Fn + S','Stop recording'),
+ ('Fn + O, then release','Replay recorded macro'),
+], [
  ('Tap left / right Shift','(  /  )   Hold for Shift'),
  ('Shift + Backspace','Forward Delete'),
  ('Fn + A','Autocorrect on / off'),
  ('Fn + C','Caps Word on / off'),
- ('Fn + D','Type ../'),
- ('Fn + M','Thanks, [new line] Alastair.'),
  ('Fn + PgUp / PgDn','Home / End'),
+ ('Turn clockwise / back','Volume up / down'),
+ ('Press knob','Mute / unmute'),
+ ('Fn + turn knob','Scroll down / up'),
 ], [
  ('Triangle','Copy: Ctrl + Shift + C'),
  ('Square','Paste: Ctrl + Shift + V'),
  ('Butterfly + Triangle','Copy: Ctrl + C'),
  ('Butterfly + Square','Paste: Ctrl + V'),
  ('Circle','Open terminal'),
- ('Fn / Butterfly + Pad 0','Open calculator'),
+ ('Fn + Pad 0 / Butterfly + Pad 0','Open calculator'),
  ('Fn + Circle','Select word; +Shift: line'),
- ('Left butterfly key','Immediately before Space'),
-], [
- ('Turn clockwise / back','Volume up / down'),
- ('Press knob','Mute / unmute'),
- ('Fn + turn knob','Scroll down / up'),
- ('Fn / Butterfly + L','ls -ltr + Enter'),
- ('Fn / Butterfly + P','ps auxw|more + Enter'),
- ('Fn / Butterfly + H','history + Enter'),
- ('Fn + R, then release','Start recording'),
- ('Fn + S','Stop recording'),
- ('Fn + O, then release','Replay recording'),
+ ('Butterfly means LEFT','The key immediately before Space'),
 ]]
 for x,rows in zip(xs,cols):
  for i,(key,action) in enumerate(rows):
   y=H-129-i*25
-  text(x,y,key,11.4,True)
+  keysize=11.4
+  while pdfmetrics.stringWidth(key,'DeskBold',keysize)>cw:keysize-=.2
+  text(x,y,key,keysize,True)
   size=10.5
   while pdfmetrics.stringWidth(action,'Desk',size)>cw:size-=.2
   text(x,y-14,action,size,color=muted)
