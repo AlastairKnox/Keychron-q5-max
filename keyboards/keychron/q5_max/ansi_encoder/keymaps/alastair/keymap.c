@@ -76,7 +76,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______, KC_BRID, KC_BRIU, LNX_OVERVIEW, LNX_APPS, UG_VALD, UG_VALU, KC_MPRV, KC_MPLY, KC_MNXT, KC_MUTE, KC_VOLD, KC_VOLU, _______, SEL_WORD, _______, _______, UG_TOGG,
         _______, BT_HST1, BT_HST2, BT_HST3, P2P4G, _______, _______, _______, _______, _______, _______, _______, _______, _______, KC_HOME, _______, _______, _______, _______,
         UG_TOGG, UG_NEXT, UG_VALU, UG_HUEU, DM_REC1, UG_SPDU, _______, _______, _______, DM_PLY1, PROCESS_LIST, _______, _______, _______, KC_END, UG_PREV, UG_NEXT, UG_SPDU,
-        _______, AC_SWITCH, DM_RSTP, UPDIR, UG_SATD, UG_SPDD, _______, SHELL_HISTORY, _______, LIST_LONG, _______, _______, _______, KC_END, UG_VALD, UG_VALU, UG_SPDD, _______,
+        _______, AC_SWITCH, DM_RSTP, UPDIR, UG_SATD, UG_SPDD, SHELL_HISTORY, _______, _______, LIST_LONG, _______, _______, _______, KC_END, UG_VALD, UG_VALU, UG_SPDD, _______,
         _______, _______, _______, CW_TOGG, _______, BAT_LVL, _______, WIN_SIG, _______, _______, _______, _______, _______, UG_HUED, UG_HUEU, UG_SATU,
         _______, _______, _______, LINUX_MODE, _______, _______, _______, _______, _______, _______, LNX_CALC, UG_SATD, _______),
 
@@ -165,8 +165,11 @@ void keyboard_post_init_user(void) {
         dynamic_keymap_set_keycode(LINUX_FN, 2, 10, PROCESS_LIST);
     if (dynamic_keymap_get_keycode(LINUX_FN, 2, 9) == KC_TRNS)
         dynamic_keymap_set_keycode(LINUX_FN, 2, 9, DM_PLY1);
-    if (dynamic_keymap_get_keycode(LINUX_FN, 3, 7) == KC_TRNS)
-        dynamic_keymap_set_keycode(LINUX_FN, 3, 7, SHELL_HISTORY);
+    if (dynamic_keymap_get_keycode(LINUX_FN, 3, 6) == KC_TRNS)
+        dynamic_keymap_set_keycode(LINUX_FN, 3, 6, SHELL_HISTORY);
+    // v1.0.2 accidentally put History on J. Remove only that old binding.
+    if (dynamic_keymap_get_keycode(LINUX_FN, 3, 7) == SHELL_HISTORY)
+        dynamic_keymap_set_keycode(LINUX_FN, 3, 7, KC_TRNS);
     if (dynamic_keymap_get_keycode(LINUX_FN, 5, 16) == KC_TRNS)
         dynamic_keymap_set_keycode(LINUX_FN, 5, 16, LNX_CALC);
     // Upgrade only our previous square binding if VIA retained the earlier map.

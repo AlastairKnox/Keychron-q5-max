@@ -2,7 +2,7 @@
 
 Personal firmware for the **Keychron Q5 Max ANSI with knob**, retaining standard Mac/Windows layouts and adding Custom Linux mode for Ubuntu.
 
-Current firmware: **[v1.0.2](releases/v1.0.2/)** (26 October 2026). The full source recovery baseline remains v1.0.0; the build script overlays the current tracked source on it.
+Current firmware: **[v1.0.3](releases/v1.0.3/)** (26 October 2026). The full source recovery baseline remains v1.0.0; the build script overlays the current tracked source on it.
 
 ## Current controls
 

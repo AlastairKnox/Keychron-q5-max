@@ -17,3 +17,7 @@ Build and host tests passed for repeated unchanged rear-switch reports while in 
 ## v1.0.2 - 26 October 2026
 
 Firmware build and host regression tests passed for the new P/H/keypad-0 actions through both triggers, press-only execution, Alt isolation, saved-map migration and preservation of deliberate remaps. Dynamic macro replay now uses Fn+O. Sleep and dictionary regression checks still pass. Ubuntu calculator launch and physical keyboard operation require hardware testing.
+
+## v1.0.3 - Correct Fn+H
+
+The v1.0.2 test mistakenly checked the same wrong J coordinate as the implementation. The new check derives H from the base layout, verifies History is on H and J is transparent, and tests migration of existing v1.0.2 bindings while retaining deliberate remaps. Firmware build and all host checks pass.
