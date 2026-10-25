@@ -183,6 +183,14 @@ int main(void){
  default_layer_set(1UL<<MAC_BASE);
  assert(!linux_mode()&&!macro_recording&&rgb_mode==7&&standard_layer==MAC_BASE);
  assert((shift_delete.layers&(1UL<<LINUX_BASE))&&!(shift_delete.layers&(1UL<<WIN_BASE)));
+ // A forced unchanged rear-switch report on wake must preserve Linux mode.
+ process_record_user(LINUX_MODE,&press);
+ process_record_user(AC_SWITCH,&press);bool saved_autocorrect=linux_autocorrect;
+ layer_state=1UL<<LINUX_FN;
+ default_layer_set(1UL<<standard_layer);
+ assert(linux_mode()&&custom_rgb_active&&linux_autocorrect==saved_autocorrect);
+ assert(layer_state==(1UL<<LINUX_FN));
+ process_record_user(LINUX_MODE,&press);assert(!linux_mode());
  // Exercise QMK's real dynamic-macro engine, including its layer_clear calls.
  process_record_user(LINUX_MODE,&press);
  release.event.time=DM_REC1;process_dynamic_macro(DM_REC1,&release);

@@ -1,0 +1,28 @@
+{
+  "repository": "https://github.com/Keychron/qmk_firmware",
+  "branch": "2025q3",
+  "commit": "2b493ff95f2665db719b1e95c91babb5036e72f3",
+  "keyboard": "keychron/q5_max/ansi_encoder",
+  "personal_keymap": "alastair",
+  "compiler": "arm-none-eabi-gcc 14.2.1 20241119",
+  "qmk_cli": "1.2.0",
+  "build_date_local": "2026-10-26",
+  "flashed": false,
+  "submodules": [
+    " 41e112ce20d85dd8be9362777fbf107586d1cbd2 lib/chibios (41e112c)",
+    " 58047eb6b31eedc320b20720fea4b8273a7dd71e lib/chibios-contrib (58047eb)",
+    "-e2239ee6043f73722e7aa812a459f54a28552929 lib/googletest",
+    " 549b97320d515bfca2f95c145a67bd13be968faa lib/lufa (heads/qmk-master)",
+    "-e19410f8f8a256609da72cff549598e0df6fa4cf lib/lvgl",
+    "-d0c5cac430cc955b65efa0e899748853d9a80928 lib/pico-sdk",
+    " c2e3b4e10d281e7f0f694d3ecbd9f320977288cc lib/printf (heads/qmk-master)",
+    "-819dbc1e5d5926b17e27e00ca6d3d2988adae04e lib/vusb"
+  ],
+  "sha256": {
+    "keychron_q5_max_ansi_encoder_alastair.bin": "468ecb2813e6bafceaec003e4b986d371e3d48b7d70211f6bb8338312b668c2e"
+  },
+  "release": "v1.0.1",
+  "source_archive": "Expanded source tree; required STM32 submodules included. Git metadata and generated build outputs omitted.",
+  "reproducibility": "Same features/source; rebuilt firmware hashes can differ because QMK embeds build metadata. Supplied binary hashes identify the archived release.",
+  "change": "Preserve Custom Linux mode on unchanged rear-switch reports during wireless wake. Explicit mode exit, actual OS switch movement and cold startup remain unchanged."
+}

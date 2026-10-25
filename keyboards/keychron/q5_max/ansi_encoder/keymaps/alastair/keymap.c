@@ -97,6 +97,7 @@ static bool macro_recording = false;
 static uint8_t standard_layer = MAC_BASE;
 static uint8_t previous_rgb_mode;
 static bool custom_rgb_active = false;
+static bool explicit_mode_exit = false;
 // The user's left butterfly key is the third bottom-row key: KC_LALT in
 // this Linux map. Defer it until its partner is known, so clipboard chords
 // do not leak Alt into the application or activate its menu on release.
@@ -138,7 +139,9 @@ static void change_mode(void) {
     clear_keyboard();
     layer_clear();
     if (linux_mode()) {
+        explicit_mode_exit = true;
         default_layer_set(1UL << standard_layer);
+        explicit_mode_exit = false;
         rgb_matrix_mode_noeeprom(previous_rgb_mode);
         custom_rgb_active = false;
     } else {
@@ -166,6 +169,13 @@ void keyboard_post_init_user(void) {
 }
 
 layer_state_t default_layer_state_set_user(layer_state_t state) {
+    // Keychron calls dip_switch_init() on wireless wake, forcing a fresh report
+    // even when the physical OS switch has not moved. That is not a mode exit.
+    // RAM survives this sleep path; no EEPROM writes or sleep-hook overrides
+    // are needed. Explicit Fn+Space and an actual switch movement still exit.
+    if (linux_mode() && !explicit_mode_exit && state == (1UL << standard_layer)) {
+        return default_layer_state;
+    }
     // Keychron reserves the DIP-switch user hook for factory tests. Observe
     // default-layer changes instead, including those made by the rear switch.
     if (!(state & (1UL << LINUX_BASE))) {

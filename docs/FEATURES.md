@@ -4,6 +4,10 @@ Built for **Keychron Q5 Max ANSI with knob**, using Keychron’s official `2025q
 
 Both the manufacturer and personal firmware compile successfully. The keyboard has **not** been flashed. Your original uploaded source remains separate and unchanged.
 
+## Sleep and wake
+
+From v1.0.1, normal wireless sleep preserves Custom Linux mode and its autocorrect setting. Fn+Space still exits, and moving the physical rear switch still restores the selected standard layout. A full restart or loss of power starts in standard mode.
+
 ## Everyday use
 
 The keyboard starts in the normal Mac or Windows mode selected by the rear switch. Press **Fn+Space** to enter Custom Linux mode. Press it again to return to the standard mode you came from. Moving the rear OS switch also exits Custom Linux mode. Unplugging/restarting returns to the standard mode; Linux mode is deliberately not saved as the startup default.

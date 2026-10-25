@@ -9,3 +9,7 @@ Verified on 25 October 2026:
 - Build output and the development environment are ignored by Git.
 
 The build used the workspace ARM GCC 14.2.1 toolchain and QMK CLI 1.2.0. Host checks mock keyboard I/O; they are not a complete USB/Ubuntu/hardware simulation. This repository preparation did not flash the keyboard or deploy the Hugo site.
+
+## v1.0.1 - 26 October 2026
+
+Build and host tests passed for repeated unchanged rear-switch reports while in Linux mode, including retaining the autocorrect setting and active Fn layer. Existing tests still verify explicit mode exit and real switch movement. Physical sleep/wake testing remains outstanding.

@@ -2,11 +2,11 @@
 
 Personal firmware for the **Keychron Q5 Max ANSI with knob**, retaining standard Mac/Windows layouts and adding Custom Linux mode for Ubuntu.
 
-Current archived release: **v1.0.0** (25 October 2026).
+Current firmware: **[v1.0.1](releases/v1.0.1/)** (26 October 2026). The full source recovery baseline remains v1.0.0; the build script overlays the current tracked source on it.
 
 ## Current controls
 
-- **Fn+Space:** enter/leave Linux mode. The rear switch and restart restore a standard layout.
+- **Fn+Space:** enter/leave Linux mode. Normal wireless sleep preserves Linux mode. An actual rear-switch movement or full restart restores a standard layout.
 - Tap left/right Shift for `(`/`)`; hold for normal Shift. **Shift+Backspace:** Delete.
 - **Fn+A:** autocorrect, initially on. **Fn+C:** Caps Word.
 - **Fn+D:** type `../`. **Fn+L or left butterfly+L:** type `ls -ltr` and press Enter.
