@@ -25,3 +25,7 @@ The v1.0.2 test mistakenly checked the same wrong J coordinate as the implementa
 ## v1.0.4 - 11 November 2026
 
 Firmware build and host regression tests pass. Lighting tests use actual board matrix/LED coordinates to verify exactly 20 target LEDs, no changes to the main keys, downward motion while idle, saved brightness/saturation, per-frame LED limits, Fn/Caps/Escape priority and standard-mode isolation. The existing macro, History mapping, sleep-state and dictionary checks remain passing. Hardware appearance, USB/wireless operation and normal sleep still require a physical test after flashing. No flashing performed.
+
+## v1.0.5 - 11 November 2026
+
+Build and host checks pass for the ten-second idle threshold, partial right-to-left coverage, full two-minute coverage, half-second full/partial retreat, repeated typing, key release and mapped encoder activity, and 32-bit timer rollover. Existing LED footprint, mode isolation, macro, saved-map, indicator and dictionary checks remain passing. The real firmware compiles with the pinned STM32 toolchain. Hardware visual timing, sleep and input response still require checking after flashing. v1.0.4 remains available as a fallback.

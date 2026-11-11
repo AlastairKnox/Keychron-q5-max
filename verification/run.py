@@ -93,7 +93,9 @@ static uint8_t rgb_matrix_get_mode(void){return rgb_mode;}
 static void rgb_matrix_mode_noeeprom(uint8_t m){rgb_mode=m;}
 typedef struct { uint8_t h,s,v; } HSV;
 typedef struct { uint8_t r,g,b; } RGB;
-static uint32_t g_rgb_timer;
+static uint32_t g_rgb_timer, mock_now;
+static uint32_t timer_read32(void){return mock_now;}
+static uint8_t g_rgb_frame_buffer[MATRIX_ROWS][MATRIX_COLS];
 static uint8_t lighting_speed=128;
 static HSV lighting_hsv={0,255,90};
 static RGB led_colours[101];
@@ -174,6 +176,40 @@ int main(void){
  layer_state=1UL<<LINUX_FN;rgb_matrix_indicators_advanced_user(0,101);assert(led_colours[top].r==50&&led_colours[top].g==50);
  layer_state=0;caps_lock=true;rgb_matrix_indicators_advanced_user(0,101);assert(led_colours[top].r==255&&led_colours[top].g==0);
  caps_lock=false;lighting_hsv.v=0;rgb_matrix_indicators_advanced_user(0,101);assert(led_colours[top].b==0);lighting_hsv.v=90;
+ // Idle timeline: no spreading before 10 seconds, full at 2 minutes.
+ assert(linux_spread_amount(9999)==0&&linux_spread_amount(10000)==0);
+ uint16_t middle=linux_spread_amount(65000);assert(middle>=32766&&middle<=32768);
+ assert(linux_spread_amount(120000)==65535&&linux_spread_amount(600000)==65535);
+ assert(linux_spread_opacity(0,65535)==255);
+ assert(linux_spread_opacity(180,linux_spread_amount(11000))>0);
+ assert(linux_spread_opacity(180,0)==0&&linux_spread_opacity(0,middle)==0&&linux_spread_opacity(180,middle)==255);
+ assert(linux_spread_opacity(90,middle)>0&&linux_spread_opacity(90,middle)<255);
+ // Full coverage and idle progress work without any input-driven updates.
+ mock_now=120000;memset(led_written,0,sizeof(led_written));rgb_matrix_indicators_advanced_user(0,101);
+ for(int i=0;i<101;i++)assert(led_written[i]);
+ // Pressing a key begins retreat but does not consume that key.
+ assert(pre_process_record_user(KC_A,&press));assert(linux_spread_amount(mock_now)==65535);
+ assert(process_record_user(KC_A,&press));
+ mock_now=120250;assert(linux_spread_amount(mock_now)>=32766&&linux_spread_amount(mock_now)<=32768);
+ pre_process_record_user(KC_B,&press); // more typing must not prolong retreat
+ mock_now=120500;assert(linux_spread_amount(mock_now)==0);
+ memset(led_written,0,sizeof(led_written));rgb_matrix_indicators_advanced_user(0,101);
+ lit=0;for(int i=1;i<101;i++)if(led_written[i])lit++;assert(lit==20);
+ // Releases restart inactivity too; an encoder's mapped key has the same path.
+ pre_process_record_user(KC_B,&release);mock_now+=120000;
+ pre_process_record_user(KC_VOLU,&press);assert(lighting_last_activity==mock_now&&lighting_retreat_from==65535);
+ mock_now+=500;assert(linux_spread_amount(mock_now)==0);
+ // A partial invasion also retreats in 500ms, with live heatmap blending.
+ mock_now+=65000;uint16_t partial=linux_spread_amount(mock_now);assert(partial>30000&&partial<40000);
+ pre_process_record_user(KC_A,&press);mock_now+=250;assert(linux_spread_amount(mock_now)==partial/2);
+ g_rgb_frame_buffer[3][9]=50;RGB heat=linux_heatmap_colour(3,9,lighting_hsv);assert(heat.b>0);
+ assert(linux_blend_channel(30,200,0)==30&&linux_blend_channel(30,200,255)==200);
+ // Timers remain correct across the 32-bit millisecond clock rollover.
+ lighting_last_activity=UINT32_MAX-5000;lighting_retreat_from=0;mock_now=6000;assert(linux_spread_amount(mock_now)>0);
+ lighting_last_activity=UINT32_MAX-120000;mock_now=UINT32_MAX;assert(linux_spread_amount(mock_now)==65535);
+ pre_process_record_user(KC_A,&press);mock_now=249;assert(linux_spread_amount(mock_now)==32767);
+ mock_now=499;assert(linux_spread_amount(mock_now)==0);
+ lighting_retreat_from=0;lighting_last_activity=mock_now;
  // No personal lighting is applied outside Linux mode.
  default_layer_state=1UL<<MAC_BASE;memset(led_written,0,sizeof(led_written));rgb_matrix_indicators_advanced_user(0,101);
  for(int i=0;i<101;i++)assert(!led_written[i]);default_layer_state=1UL<<LINUX_BASE;
@@ -267,7 +303,7 @@ int main(void){
  layer_state=1UL<<LINUX_FN;
  process_dynamic_macro(DM_PLY1,&release);
  assert(replayed_letters==before+1&&linux_mode()&&layer_state==(1UL<<LINUX_FN));
- puts("PASS: mode isolation, both stock return paths, rear switch recovery, autocorrect gate/indicator, literal macros/modifier restoration, macro recording/replay with QMK core, clipboard modes/modifier isolation, desktop shortcuts, override scope, 20-LED downward colour sweep and indicator priority");
+ puts("PASS: mode isolation, both stock return paths, rear switch recovery, autocorrect gate/indicator, literal macros/modifier restoration, macro recording/replay with QMK core, clipboard modes/modifier isolation, desktop shortcuts, override scope, 20-LED downward colour sweep, idle spread/retreat timing, rollover and indicator priority");
 }
 '''
 dispatcher='''

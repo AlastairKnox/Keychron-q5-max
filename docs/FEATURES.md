@@ -178,3 +178,9 @@ Removed the unbounded `erested -> arrested` correction that matched the end of `
 In Linux mode the 17 number-pad keys and the circle, triangle and square keys continuously cycle through a rainbow that sweeps from top to bottom. The sweep runs while typing and while idle, until normal keyboard sleep. All other keys retain the typing heatmap selected on entry to Linux mode; other background patterns can still be selected with Fn+keypad 7/8.
 
 Fn+keypad 4/5 controls brightness; Fn+keypad 9/6 controls animation speed. Saturation controls also apply to the sweep; its hue changes automatically. Fn+Tab still turns lighting off. Holding Fn temporarily shows the existing assigned-key highlights, Caps Lock temporarily shows red, and Escape keeps its autocorrect/recording status. Standard Mac and Windows lighting is unchanged. No Ubuntu software is required.
+
+## Idle rainbow invasion (v1.0.5)
+
+After 10 seconds with no key or knob activity in Linux mode, the downward rainbow begins spreading from the number pad into the main keyboard, moving right to left with a soft edge. It reaches the left edge two minutes after the last activity (including the initial ten-second pause). Escape always retains its status colour.
+
+Any keypress, release or knob event immediately starts a half-second retreat to the number pad; input is delivered normally without waiting. Further typing does not prolong that retreat. The heatmap keeps updating underneath and reappears as the rainbow retreats. The ten-second idle wait restarts after activity. Holding Fn and Caps Lock keep their existing lighting priority. The original wireless lighting-off/sleep timers and Fn+Tab lighting toggle are unchanged. Standard modes do not use this effect.

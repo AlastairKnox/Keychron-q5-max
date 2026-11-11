@@ -111,6 +111,42 @@ static bool linux_mode(void) {
     return (default_layer_state & (1UL << LINUX_BASE)) != 0;
 }
 
+// Idle animation uses wall-clock time, never delays key handling or writes EEPROM.
+#define LINUX_SPREAD_DELAY_MS 10000UL
+#define LINUX_SPREAD_FULL_MS 120000UL
+#define LINUX_RETREAT_MS 500UL
+static uint32_t lighting_last_activity, lighting_retreat_start;
+static uint16_t lighting_retreat_from;
+
+static uint16_t linux_spread_amount(uint32_t now) {
+    uint32_t retreat_elapsed = now - lighting_retreat_start;
+    if (lighting_retreat_from && retreat_elapsed < LINUX_RETREAT_MS) {
+        return (uint32_t)lighting_retreat_from * (LINUX_RETREAT_MS - retreat_elapsed) / LINUX_RETREAT_MS;
+    }
+    uint32_t idle = now - lighting_last_activity;
+    if (idle <= LINUX_SPREAD_DELAY_MS) return 0;
+    if (idle >= LINUX_SPREAD_FULL_MS) return UINT16_MAX;
+    return (uint64_t)(idle - LINUX_SPREAD_DELAY_MS) * UINT16_MAX / (LINUX_SPREAD_FULL_MS - LINUX_SPREAD_DELAY_MS);
+}
+
+static void linux_lighting_activity(void) {
+    uint32_t now = timer_read32();
+    uint16_t amount = linux_spread_amount(now);
+    // Further typing must not restart or slow an already-running retreat.
+    if (!lighting_retreat_from || now - lighting_retreat_start >= LINUX_RETREAT_MS) {
+        lighting_retreat_from = amount;
+        lighting_retreat_start = now;
+    }
+    lighting_last_activity = now;
+}
+
+bool pre_process_record_user(uint16_t keycode, keyrecord_t *record) {
+    // Encoder maps produce key events here too (volume and Fn+scroll included).
+    // Observe presses and releases before features can consume the event.
+    if (linux_mode()) linux_lighting_activity();
+    return true;
+}
+
 const key_override_t shift_delete = ko_make_with_layers(
     MOD_MASK_SHIFT, KC_BSPC, KC_DEL, (1UL << LINUX_BASE) | (1UL << LINUX_FN));
 const key_override_t *key_overrides[] = { &shift_delete };
@@ -145,6 +181,8 @@ static void change_mode(void) {
         rgb_matrix_mode_noeeprom(previous_rgb_mode);
         custom_rgb_active = false;
     } else {
+        lighting_last_activity = timer_read32();
+        lighting_retreat_from = 0;
         standard_layer = get_highest_layer(default_layer_state);
         previous_rgb_mode = rgb_matrix_get_mode();
         custom_rgb_active = true;
@@ -321,20 +359,53 @@ bool dynamic_macro_valid_key_user(uint16_t keycode, keyrecord_t *record) {
     return linux_mode() && keycode != LINUX_MODE;
 }
 
-// Continuous downward rainbow on the 17 numpad keys and three symbol keys.
-// Matrix coordinates avoid including the navigation cluster or knob.
+// Blend an advancing rainbow edge into QMK's live heatmap framebuffer.
+// The core continues maintaining/decaying the heatmap even while it is covered.
+static RGB linux_heatmap_colour(uint8_t row, uint8_t col, HSV hsv) {
+    uint8_t val = g_rgb_frame_buffer[row][col];
+    hsv.h = 170 - (val > 85 ? val - 85 : 0);
+    uint8_t level = (val > 85 ? 85 : val) * 3;
+    hsv.v = (uint16_t)level * hsv.v >> 8;
+    return hsv_to_rgb(hsv);
+}
+
+static uint8_t linux_spread_opacity(uint8_t x, uint16_t amount) {
+    if (!amount) return 0;
+    // QMK x coordinates span 0..224. Leave a 16-unit feathered edge.
+    int32_t edge = 180 * 256 - (int32_t)((uint32_t)amount * (196 * 256UL) / UINT16_MAX);
+    int32_t distance = (int32_t)x * 256 - edge;
+    if (distance <= 0) return 0;
+    if (distance >= 16 * 256) return 255;
+    return distance * 255 / (16 * 256);
+}
+
+static uint8_t linux_blend_channel(uint8_t base, uint8_t overlay, uint8_t opacity) {
+    return ((uint16_t)base * (255 - opacity) + (uint16_t)overlay * opacity + 127) / 255;
+}
+
 static void linux_numpad_colour_cycle(uint8_t led_min, uint8_t led_max) {
     const uint8_t divisor = 64 - (rgb_matrix_get_speed() >> 2);
     const uint8_t phase = (uint8_t)(g_rgb_timer / divisor);
-    HSV hsv = rgb_matrix_get_hsv();
+    const uint16_t spread = linux_spread_amount(timer_read32());
+    const HSV settings = rgb_matrix_get_hsv();
     for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
-        for (uint8_t col = 15; col < MATRIX_COLS; ++col) {
-            if (row == 0 && col > 17) continue;
+        for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
             uint8_t led = g_led_config.matrix_co[row][col];
             if (led == NO_LED || led < led_min || led >= led_max) continue;
+            bool numpad = col >= 15 && (row != 0 || col <= 17);
+            uint8_t opacity = numpad ? 255 : linux_spread_opacity(g_led_config.point[led].x, spread);
+            if (!opacity) continue;
+            HSV hsv = settings;
             // A colour reaches increasing y as time advances: top to bottom.
             hsv.h = phase - 2 * g_led_config.point[led].y;
             RGB rgb = hsv_to_rgb(hsv);
+            if (opacity < 255) {
+                RGB base = {0, 0, 0};
+                if (rgb_matrix_get_mode() == RGB_MATRIX_TYPING_HEATMAP) base = linux_heatmap_colour(row, col, settings);
+                rgb.r = linux_blend_channel(base.r, rgb.r, opacity);
+                rgb.g = linux_blend_channel(base.g, rgb.g, opacity);
+                rgb.b = linux_blend_channel(base.b, rgb.b, opacity);
+            }
             rgb_matrix_set_color(led, rgb.r, rgb.g, rgb.b);
         }
     }

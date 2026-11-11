@@ -125,3 +125,9 @@ Upstream files and helpers retain their original licence notices. The complete u
 `linux_numpad_colour_cycle()` in `keymap.c` overlays the selected RGB Matrix effect only in Linux mode. It targets the board matrix columns 15-18 (top row only 15-17), skips NO_LED cells, and uses the board's physical LED y coordinates to advance a rainbow down the right-hand area. QMK's frame timer drives it without blocking input or adding an inactivity timer. Saved RGB brightness, saturation and speed are respected. The normal RGB engine handles lighting-off and suspend; there are no new wake events or EEPROM writes.
 
 The advanced indicator callback applies the sweep first, then Fn highlights, Caps Lock warning, and Escape status. Existing macros and layer switching are unchanged. Tests load the actual ANSI board LED geometry and verify the exact 20-LED footprint, movement, brightness, frame limits, indicator priority, and isolation from standard modes.
+
+## Idle spread and retreat (v1.0.5)
+
+`linux_spread_amount()` calculates spread from a 32-bit millisecond timestamp: 10,000ms delay, full coverage at 120,000ms, and a 500ms retreat. `pre_process_record_user()` observes key/encoder presses and releases before other features consume events. Entry to Linux mode resets the animation. Repeated input does not restart a retreat already underway. Unsigned subtraction handles the clock rollover; multiplication for the two-minute timeline uses a 64-bit intermediate to avoid overflow on STM32.
+
+`linux_spread_opacity()` uses the actual LED x position and a 16-unit feathered boundary moving from x=180 to x=-16. The number pad and symbols remain fully coloured. In the default heatmap mode, the edge blends against the live QMK heatmap framebuffer; other manually selected effects fade through black at the boundary. The core effect keeps rendering underneath. Fn, Caps Lock and Escape indicators render afterwards. Normal sleep is never reset by animation frames.
