@@ -2,7 +2,7 @@
 
 Personal firmware for the **Keychron Q5 Max ANSI with knob**, retaining standard Mac/Windows layouts and adding Custom Linux mode for Ubuntu.
 
-Current firmware: **[v1.0.3](releases/v1.0.3/)** (26 October 2026). The full source recovery baseline remains v1.0.0; the build script overlays the current tracked source on it.
+Current firmware: **[v1.0.4](releases/v1.0.4/)** (11 November 2026). The full source recovery baseline remains v1.0.0; the build script overlays the current tracked source on it.
 
 ## Current controls
 
@@ -14,8 +14,8 @@ Current firmware: **[v1.0.3](releases/v1.0.3/)** (26 October 2026). The full sou
 - **Triangle / Square:** Ctrl+Shift+C / Ctrl+Shift+V. Hold the left butterfly for Ctrl+C / Ctrl+V instead.
 - **Circle:** open terminal. **Fn+circle:** select word; add Shift for line selection.
 - Knob: volume; press to mute; hold Fn to scroll.
-- **Fn+R/S/P:** record, stop, replay a temporary macro.
-- Escape: green = autocorrect on; amber = off; red = recording. Typing heatmap and Fn-key lighting are retained.
+- **Fn+R/S/O:** record, stop, replay a temporary macro.
+- Escape: green = autocorrect on; amber = off; red = recording. Typing heatmap remains on the main keys; the number pad and circle/triangle/square show a continuous downward rainbow sweep. Fn highlights and Caps Lock warning take priority.
 
 The left butterfly is immediately before Space and is mapped to left Alt in the Linux keymap. Ordinary Alt shortcuts remain available. Desktop/media response depends on the host application's bindings. Autocorrect has 3,666 rules; the unbounded `erested -> arrested` rule was removed because it altered `interested`.
 

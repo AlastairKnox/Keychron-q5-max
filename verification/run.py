@@ -23,15 +23,15 @@ header='''#pragma once
 #include <assert.h>
 #define VIA_ENABLE
 #define PROGMEM
-#define MATRIX_ROWS 1
-#define MATRIX_COLS 114
+#define MATRIX_ROWS 6
+#define MATRIX_COLS 19
 #define NUM_ENCODERS 1
 #define NUM_DIRECTIONS 2
 #define NO_LED 255
 #define SAFE_RANGE 0x7e00
 #define KC_TRNS 1
 #define _______ KC_TRNS
-#define LAYOUT_ansi_101(...) {{__VA_ARGS__}}
+LAYOUT_MOCK_PLACEHOLDER
 #define ENCODER_CCW_CW(a,b) {a,b}
 #define MO(l) (0x5200+(l))
 #define LCTL(k) ((k)|0x0100)
@@ -48,7 +48,7 @@ typedef uint32_t layer_state_t;
 layer_state_t default_layer_state_set_user(layer_state_t state);
 typedef struct { uint8_t col,row; } keypos_t;
 typedef struct { struct { bool pressed; uint16_t time; keypos_t key; } event; } keyrecord_t;
-typedef struct { uint8_t matrix_co[MATRIX_ROWS][MATRIX_COLS]; } led_config_t;
+typedef struct { uint8_t matrix_co[MATRIX_ROWS][MATRIX_COLS]; struct {uint8_t x,y;} point[101]; uint8_t flags[101]; } led_config_t;
 typedef struct { uint8_t trigger_mods; uint16_t trigger,replacement; uint32_t layers; } key_override_t;
 #define ko_make_with_layers(m,k,r,l) {m,k,r,l}
 static struct { bool autocorrect_enable; } keymap_config;
@@ -57,7 +57,8 @@ static uint32_t default_layer_state=1,layer_state;
 static uint8_t held_mods,weak_mods,oneshot,rgb_mode=7;
 static uint8_t led_red,led_green,led_blue;
 typedef struct { bool caps_lock; } led_t;
-static led_t host_keyboard_led_state(void){return (led_t){0};}
+static bool caps_lock;
+static led_t host_keyboard_led_state(void){return (led_t){caps_lock};}
 static int autocorrect_resets,default_handler_calls,caps_resets,taps;
 static uint16_t last_tap;
 static char literal[256];
@@ -90,7 +91,18 @@ static uint8_t get_highest_layer(uint32_t l){uint8_t n=0;while(l>>=1)n++;return 
 static void caps_word_off(void){caps_resets++;}
 static uint8_t rgb_matrix_get_mode(void){return rgb_mode;}
 static void rgb_matrix_mode_noeeprom(uint8_t m){rgb_mode=m;}
-static void rgb_matrix_set_color(uint8_t i,uint8_t r,uint8_t g,uint8_t b){if(!i){led_red=r;led_green=g;led_blue=b;}}
+typedef struct { uint8_t h,s,v; } HSV;
+typedef struct { uint8_t r,g,b; } RGB;
+static uint32_t g_rgb_timer;
+static uint8_t lighting_speed=128;
+static HSV lighting_hsv={0,255,90};
+static RGB led_colours[101];
+static bool led_written[101];
+static HSV rgb_matrix_get_hsv(void){return lighting_hsv;}
+static uint8_t rgb_matrix_get_speed(void){return lighting_speed;}
+// Preserve HSV components for assertions; hardware builds use QMK conversion.
+static RGB hsv_to_rgb(HSV hsv){return (RGB){hsv.h,hsv.s,hsv.v};}
+static void rgb_matrix_set_color(uint8_t i,uint8_t r,uint8_t g,uint8_t b){assert(i<101);led_written[i]=true;led_colours[i]=(RGB){r,g,b};if(!i){led_red=r;led_green=g;led_blue=b;}}
 static uint16_t keymap_key_to_keycode(uint8_t l,keypos_t k){return KC_TRNS;}
 static void send_string(const char *s){assert(!held_mods&&!weak_mods&&!oneshot);strcpy(literal,s);}
 static bool process_autocorrect(uint16_t k,keyrecord_t *r){autocorrect_resets++;return true;}
@@ -104,6 +116,13 @@ void process_record(keyrecord_t *record);
 #define dprintln(...) ((void)0)
 #define dprintf(...) ((void)0)
 '''
+# Use the board's actual matrix and LED geometry instead of a flattened mock.
+params=','.join('k'+str(i) for i in range(len(positions)))
+entries=','.join('[%d][%d]=k%d'%(p['matrix'][0],p['matrix'][1],i) for i,p in enumerate(positions))
+header=header.replace('LAYOUT_MOCK_PLACEHOLDER','#define LAYOUT_ansi_101('+params+') {'+entries+'}')
+board=(qmk_root/'keyboards/keychron/q5_max/ansi_encoder/ansi_encoder.c').read_text()
+led_init=re.search(r'led_config_t g_led_config = (.*?^});',board,re.S|re.M).group(1)
+header=header.replace('static led_config_t g_led_config;','#define __ NO_LED\nstatic led_config_t g_led_config = '+led_init+';\n#undef __')
 header+='\n'.join(f'#define {k} {i+2}' for i,k in enumerate(sorted(keys)))+'\n'
 header+='\n'.join(f'#define {k} {i+224}' for i,k in enumerate(mods))+'\n'
 header+='''
@@ -125,6 +144,7 @@ core=re.sub(r'__attribute__\(\(weak\)\) bool dynamic_macro_\w+_user\([^)]*\) \{.
 test='''
 #include <stdio.h>
 int main(void){
+ // Lighting coverage uses actual matrix coordinates and board LED positions.
  keyrecord_t press={.event={.pressed=true}},release={.event={.pressed=false}};
  stored_extra[2][10]=DM_PLY1;stored_extra[2][9]=stored_extra[3][6]=stored_extra[5][16]=KC_TRNS;stored_extra[3][7]=SHELL_HISTORY;
  stored_square=LNX_OVERVIEW;
@@ -140,6 +160,24 @@ int main(void){
  layer_state=1UL<<MAC_FN; process_record_user(LINUX_MODE,&press);
  assert(linux_mode()&&default_layer_state==(1UL<<LINUX_BASE)&&layer_state==0);
  assert(rgb_mode==RGB_MATRIX_TYPING_HEATMAP);
+ memset(led_written,0,sizeof(led_written));g_rgb_timer=0;
+ rgb_matrix_indicators_advanced_user(0,101);
+ int lit=0;for(int i=1;i<101;i++)if(led_written[i]){lit++;assert(g_led_config.point[i].x>=192);}
+ assert(lit==20); // 17 keypad keys plus circle, triangle and square; Escape separate.
+ uint8_t top=g_led_config.matrix_co[0][15],bottom=g_led_config.matrix_co[5][16];
+ assert(led_colours[top].r==0&&led_colours[bottom].r==(uint8_t)(-122));
+ // At +3904ms, the top colour reaches the bottom (61 physical y units).
+ g_rgb_timer=3904;rgb_matrix_indicators_advanced_user(0,101);assert(led_colours[bottom].r==0);
+ assert(led_colours[bottom].b==90&&led_colours[bottom].g==255);
+ memset(led_written,0,sizeof(led_written));rgb_matrix_indicators_advanced_user(32,36);
+ for(int i=0;i<101;i++)assert(led_written[i]==(i>=32&&i<36));
+ layer_state=1UL<<LINUX_FN;rgb_matrix_indicators_advanced_user(0,101);assert(led_colours[top].r==50&&led_colours[top].g==50);
+ layer_state=0;caps_lock=true;rgb_matrix_indicators_advanced_user(0,101);assert(led_colours[top].r==255&&led_colours[top].g==0);
+ caps_lock=false;lighting_hsv.v=0;rgb_matrix_indicators_advanced_user(0,101);assert(led_colours[top].b==0);lighting_hsv.v=90;
+ // No personal lighting is applied outside Linux mode.
+ default_layer_state=1UL<<MAC_BASE;memset(led_written,0,sizeof(led_written));rgb_matrix_indicators_advanced_user(0,101);
+ for(int i=0;i<101;i++)assert(!led_written[i]);default_layer_state=1UL<<LINUX_BASE;
+
  assert(process_autocorrect_user(&k,&press,&buf,&m)&&default_handler_calls==1);
  process_record_user(AC_SWITCH,&press); buf=9;
  assert(!linux_autocorrect&&!process_autocorrect_user(&k,&press,&buf,&m)&&buf==0);
@@ -229,7 +267,7 @@ int main(void){
  layer_state=1UL<<LINUX_FN;
  process_dynamic_macro(DM_PLY1,&release);
  assert(replayed_letters==before+1&&linux_mode()&&layer_state==(1UL<<LINUX_FN));
- puts("PASS: mode isolation, both stock return paths, rear switch recovery, autocorrect gate/indicator, literal macros/modifier restoration, macro recording/replay with QMK core, clipboard modes/modifier isolation, desktop shortcuts, override scope");
+ puts("PASS: mode isolation, both stock return paths, rear switch recovery, autocorrect gate/indicator, literal macros/modifier restoration, macro recording/replay with QMK core, clipboard modes/modifier isolation, desktop shortcuts, override scope, 20-LED downward colour sweep and indicator priority");
 }
 '''
 dispatcher='''

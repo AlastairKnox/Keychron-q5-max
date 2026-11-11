@@ -172,3 +172,9 @@ Build and host checks pass, including modifier restoration, no stray Alt after a
 Fn+L and left-butterfly+L type `ls -ltr` followed by Enter in Linux mode. The command runs in the focused terminal; in other applications it types the same text and newline. The previous transparent Fn+L mapping is migrated without resetting other saved mappings.
 
 Removed the unbounded `erested -> arrested` correction that matched the end of `interested`. All other dictionary entries remain unchanged; 3,666 entries remain.
+
+## Continuous colour sweep (v1.0.4)
+
+In Linux mode the 17 number-pad keys and the circle, triangle and square keys continuously cycle through a rainbow that sweeps from top to bottom. The sweep runs while typing and while idle, until normal keyboard sleep. All other keys retain the typing heatmap selected on entry to Linux mode; other background patterns can still be selected with Fn+keypad 7/8.
+
+Fn+keypad 4/5 controls brightness; Fn+keypad 9/6 controls animation speed. Saturation controls also apply to the sweep; its hue changes automatically. Fn+Tab still turns lighting off. Holding Fn temporarily shows the existing assigned-key highlights, Caps Lock temporarily shows red, and Escape keeps its autocorrect/recording status. Standard Mac and Windows lighting is unchanged. No Ubuntu software is required.

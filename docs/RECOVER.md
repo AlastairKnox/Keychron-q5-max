@@ -119,3 +119,9 @@ The target is **Keychron Q5 Max ANSI with knob**, not Q5, Q5 Pro, Q5 HE, ISO or 
 After editing, save a new version of the custom source and full recovery kit, rebuilt binary, SHA256SUMS, updated guide and build manifest together. Update the website's download links and retain the older version as a fallback. Do not silently overwrite an archived release.
 
 Upstream files and helpers retain their original licence notices. The complete upstream tree includes the relevant licences; the archive does not claim ownership of Keychron, QMK, ChibiOS, LUFA or Select Word.
+
+## Custom lighting (v1.0.4)
+
+`linux_numpad_colour_cycle()` in `keymap.c` overlays the selected RGB Matrix effect only in Linux mode. It targets the board matrix columns 15-18 (top row only 15-17), skips NO_LED cells, and uses the board's physical LED y coordinates to advance a rainbow down the right-hand area. QMK's frame timer drives it without blocking input or adding an inactivity timer. Saved RGB brightness, saturation and speed are respected. The normal RGB engine handles lighting-off and suspend; there are no new wake events or EEPROM writes.
+
+The advanced indicator callback applies the sweep first, then Fn highlights, Caps Lock warning, and Escape status. Existing macros and layer switching are unchanged. Tests load the actual ANSI board LED geometry and verify the exact 20-LED footprint, movement, brightness, frame limits, indicator priority, and isolation from standard modes.

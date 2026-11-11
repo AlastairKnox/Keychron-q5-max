@@ -321,8 +321,28 @@ bool dynamic_macro_valid_key_user(uint16_t keycode, keyrecord_t *record) {
     return linux_mode() && keycode != LINUX_MODE;
 }
 
+// Continuous downward rainbow on the 17 numpad keys and three symbol keys.
+// Matrix coordinates avoid including the navigation cluster or knob.
+static void linux_numpad_colour_cycle(uint8_t led_min, uint8_t led_max) {
+    const uint8_t divisor = 64 - (rgb_matrix_get_speed() >> 2);
+    const uint8_t phase = (uint8_t)(g_rgb_timer / divisor);
+    HSV hsv = rgb_matrix_get_hsv();
+    for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
+        for (uint8_t col = 15; col < MATRIX_COLS; ++col) {
+            if (row == 0 && col > 17) continue;
+            uint8_t led = g_led_config.matrix_co[row][col];
+            if (led == NO_LED || led < led_min || led >= led_max) continue;
+            // A colour reaches increasing y as time advances: top to bottom.
+            hsv.h = phase - 2 * g_led_config.point[led].y;
+            RGB rgb = hsv_to_rgb(hsv);
+            rgb_matrix_set_color(led, rgb.r, rgb.g, rgb.b);
+        }
+    }
+}
+
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     if (!linux_mode()) return true;
+    linux_numpad_colour_cycle(led_min, led_max);
     if (layer_state_is(LINUX_FN)) {
         for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
             for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
